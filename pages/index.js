@@ -74,10 +74,32 @@ export default function Home() {
   const [imageUrl, setImageUrl] = useState('');
   const [content, setContent] = useState(suggestedContent);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Content submitted:', content);
-    setContent('');
+    try {
+      const response = await fetch('/api/submit-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title, description, imageUrl }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+  
+      const result = await response.json();
+      console.log('Content submitted:', result);
+  
+      // Clear the form fields
+      setTitle('');
+      setDescription('');
+      setImageUrl('');
+      // Optionally, update the content state or show a success message
+    } catch (error) {
+      console.error('Error submitting content:', error);
+    }
   };
 
 

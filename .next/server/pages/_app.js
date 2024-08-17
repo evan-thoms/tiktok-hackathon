@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-"use strict";
-=======
->>>>>>> main
 /*
  * ATTENTION: An "eval-source-map" devtool has been used.
  * This devtool is neither made for production nor for readable output files.
@@ -16,25 +12,6 @@ exports.id = "pages/_app";
 exports.ids = ["pages/_app"];
 exports.modules = {
 
-<<<<<<< HEAD
-/***/ "react":
-/*!************************!*\
-  !*** external "react" ***!
-  \************************/
-/***/ ((module) => {
-
-module.exports = require("react");
-
-/***/ }),
-
-/***/ "react/jsx-runtime":
-/*!************************************!*\
-  !*** external "react/jsx-runtime" ***!
-  \************************************/
-/***/ ((module) => {
-
-module.exports = require("react/jsx-runtime");
-=======
 /***/ "./pages/_app.js":
 /*!***********************!*\
   !*** ./pages/_app.js ***!
@@ -64,7 +41,6 @@ eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpac
 
 "use strict";
 module.exports = require("react/jsx-dev-runtime");
->>>>>>> main
 
 /***/ })
 
@@ -75,11 +51,7 @@ module.exports = require("react/jsx-dev-runtime");
 var __webpack_require__ = require("../webpack-runtime.js");
 __webpack_require__.C(exports);
 var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-<<<<<<< HEAD
-var __webpack_exports__ = __webpack_require__.X(0, ["vendor-chunks/next","vendor-chunks/@swc"], () => (__webpack_exec__("./node_modules/next/dist/pages/_app.js")));
-=======
 var __webpack_exports__ = (__webpack_exec__("./pages/_app.js"));
->>>>>>> main
 module.exports = __webpack_exports__;
 
 })();

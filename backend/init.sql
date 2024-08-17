@@ -1,6 +1,7 @@
 CREATE TABLE content (
     id SERIAL PRIMARY KEY,
     text_content TEXT NOT NULL,
+    imageUrl TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

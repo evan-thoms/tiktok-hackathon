@@ -1,7 +1,7 @@
 package main
 
 import (
-	// "database/sql"
+	"database/sql"
 	"encoding/json"
 	"html/template"
 	"log"
@@ -9,13 +9,16 @@ import (
 	"os"
 	"time"
 
-	// "github.com/go-redis/redis/v8"
+	"github.com/gorilla/handlers"
+
 	"github.com/gorilla/websocket"
+
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 )
 
 var redisClient *redis.Client
+var db *sql.DB
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -23,34 +26,45 @@ var upgrader = websocket.Upgrader{
 }
 
 type Content struct {
-	Text      string    `json:"text"`
-	Timestamp time.Time `json:"timestamp"`
+	ID        int       `json:"id"`
+	Text      string    `json:"text_content"`
+	ImageURL  string    `json:"imageUrl"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func main() {
-	// Database initialization commented out
-	// var err error
-	// db, err = sql.Open("mysql", "root:Headstarter-ehhms5@tcp(127.0.0.1:3306)/tiktok_hackathon")
-	// if err != nil {
-	//     log.Fatal(err)
-	// }
-	// db, err = sql.Open("mysql", dbURL)
-	// connStr := "user=evanthoms password=password dbname=tiktok_hackathon sslmode=disable"
-	// db, err = sql.Open("postgres", connStr)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer db.Close()
+	var err error
+
+	// PostgreSQL connection string
+	connStr := "user=evanthoms password=password dbname=tiktok_hackathon sslmode=disable"
+	db, err = sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
 	redisClient = redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
 
-	http.HandleFunc("/", handleIndex)
-	http.HandleFunc("/submit", handleSubmit)
-	http.HandleFunc("/ws", handleWebSocket)
+	corsHandler := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}), // Adjust this to limit origins if necessary
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+	)
+	// http.Handle("/", corsHandler(http.HandlerFunc(handleIndex)))
+	http.Handle("/", http.FileServer(http.Dir("build")))
+
+	http.Handle("/api/submit-content", corsHandler(http.HandlerFunc(handleSubmitContent)))
+	http.Handle("/ws", corsHandler(http.HandlerFunc(handleWebSocket)))
 
 	http.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.Dir("dist"))))
+
+	// http.HandleFunc("/", handleIndex)
+	// http.HandleFunc("/api/submit-content", handleSubmitContent)
+	// http.HandleFunc("/ws", handleWebSocket)
+
+	// http.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.Dir("dist"))))
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -62,12 +76,11 @@ func main() {
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
-	// Commented out content retrieval from the database
-	// contents, err := getContents()
-	// if err != nil {
-	//     http.Error(w, err.Error(), http.StatusInternalServerError)
-	//     return
-	// }
+	contents, err := getContents()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	tmpl, err := template.ParseFiles("index.html")
 	if err != nil {
@@ -75,51 +88,89 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Passing nil instead of contents to the template
-	tmpl.Execute(w, nil)
+	tmpl.Execute(w, contents)
 }
 
-func handleSubmit(w http.ResponseWriter, r *http.Request) {
+func handleSubmitContent(w http.ResponseWriter, r *http.Request) {
+	// w.Write([]byte(`{"message": "starting content submit"}`))
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	content := r.FormValue("content")
-	if content == "" {
-		http.Error(w, "Content cannot be empty", http.StatusBadRequest)
+	// Parsing JSON payload from the request body
+	var req struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		ImageURL    string `json:"imageUrl"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
-	// <<<<<<< HEAD
-	// 	_, err := db.Exec("INSERT INTO content (text_content) VALUES ($1)", content)
-	// 	if err != nil {
-	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 		return
-	// 	}
-	// =======
+	// Validate fields
+	if req.Title == "" || req.Description == "" || req.ImageURL == "" {
+		http.Error(w, "All fields are required", http.StatusBadRequest)
+		return
+	}
 
-	// Commented out the database insertion
-	// _, err := db.Exec("INSERT INTO content (text_content) VALUES (?)", content)
-	// if err != nil {
-	//     http.Error(w, err.Error(), http.StatusInternalServerError)
-	//     return
-	// }
-	// >>>>>>> 433a19b60fa8fa354f161be38f6c3fb6e3bee4aa
+	// Insert content into PostgreSQL
+	_, err := db.Exec("INSERT INTO content (text_content, imageUrl) VALUES ($1, $2)", req.Description, req.ImageURL)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	// Publish new content to Redis
 	newContent := Content{
-		Text:      content,
-		Timestamp: time.Now(),
+		Text:      req.Description,
+		ImageURL:  req.ImageURL,
+		CreatedAt: time.Now(),
 	}
 	jsonContent, _ := json.Marshal(newContent)
-	err := redisClient.Publish(r.Context(), "new_content", jsonContent).Err()
+	err = redisClient.Publish(r.Context(), "new_content", jsonContent).Err()
 	if err != nil {
 		log.Printf("Error publishing to Redis: %v", err)
 	}
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(`{"message": "Content submitted successfully"}`))
 }
+
+// func handleSubmit(w http.ResponseWriter, r *http.Request) {
+// 	if r.Method != http.MethodPost {
+// 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+// 		return
+// 	}
+
+// 	textContent := r.FormValue("text_content")
+// 	imageURL := r.FormValue("image_url")
+// 	if textContent == "" || imageURL == "" {
+// 		http.Error(w, "Content or image URL cannot be empty", http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	_, err := db.Exec("INSERT INTO content (text_content, imageurl) VALUES ($1, $2)", textContent, imageURL)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	newContent := Content{
+// 		Text:      textContent,
+// 		ImageURL:  imageURL,
+// 		CreatedAt: time.Now(),
+// 	}
+// 	jsonContent, _ := json.Marshal(newContent)
+// 	err = redisClient.Publish(r.Context(), "new_content", jsonContent).Err()
+// 	if err != nil {
+// 		log.Printf("Error publishing to Redis: %v", err)
+// 	}
+
+// 	http.Redirect(w, r, "/", http.StatusSeeOther)
+// }
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -148,22 +199,21 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Commented out the getContents function
-// func getContents() ([]string, error) {
-// 	rows, err := db.Query("SELECT text_content FROM content ORDER BY created_at DESC")
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer rows.Close()
+func getContents() ([]Content, error) {
+	rows, err := db.Query("SELECT id, text_content, imageUrl, created_at FROM content ORDER BY created_at DESC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-// 	var contents []string
-// 	for rows.Next() {
-// 		var content string
-// 		if err := rows.Scan(&content); err != nil {
-// 			return nil, err
-// 		}
-// 		contents = append(contents, content)
-// 	}
+	var contents []Content
+	for rows.Next() {
+		var content Content
+		if err := rows.Scan(&content.ID, &content.Text, &content.ImageURL, &content.CreatedAt); err != nil {
+			return nil, err
+		}
+		contents = append(contents, content)
+	}
 
-// 	return contents, nil
-// }
+	return contents, nil
+}
