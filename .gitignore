@@ -1,10 +1,11 @@
 # Environment variables
 .env*
 
+.next/
+
 # Node modules
 node_modules/
 
 # Build files
 dist/
 node_modules
-next/
