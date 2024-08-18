@@ -8,7 +8,6 @@ import "slick-carousel/slick/slick-theme.css";
 import Footer from "../components/Footer";
 import Cookies from 'js-cookie';
 
-
 // Sample content data for the cards
 const suggestedContent = [
   {
@@ -37,7 +36,6 @@ const suggestedContent = [
     imageUrl: "https://via.placeholder.com/150",
   }
 ];
-
 
 const sliderSettings = {
   dots: true,
@@ -182,7 +180,7 @@ export default function Home() {
         <div>
           {showAlert &&
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-              <strong className="font-bold">{notificationMessage}</strong>
+              <strong className="font-bold">{notificationMessage} </strong>
               <span className="block sm:inline">Go check it out!.</span>
               <span className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={handleCloseNotification}>
                 <svg className="fill-current h-6 w-6 text-red-500 cursor-pointer" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
