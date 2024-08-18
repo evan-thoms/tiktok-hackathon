@@ -108,7 +108,7 @@ export default function Home() {
 
     socket.onmessage = (event) => {
       const newContent = JSON.parse(event.data);
-      setNotificationMessage(`New post added! "${JSON.parse(event.data).title}"`);
+      setNotificationMessage(`New post added! "${JSON.parse(event.data).title}".   `);
       setShowAlert(true);
       setContent((prevContents) => [newContent, ...prevContents]);
     };
@@ -125,7 +125,7 @@ export default function Home() {
       console.error('WebSocket error:', error);
     };
 
-    // Cleanup on component unmount
+    // Cleanup on component unmount/////////////////////////////UNCOMMENT///////////////
     return () => {
       socket.close();
     };
@@ -173,17 +173,17 @@ export default function Home() {
   const handleCloseNotification = () => {
     setShowAlert(false);
   };
-
+  
   return (
     <>
       <div className="bg-customBeige">
         <Header />
 
-        <div>
+        {/* <div> */}
           {showAlert &&
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded absolute" style={{marginTop:"-30px", width:"230px", right:"190px"}} role="alert">
               <strong className="font-bold">{notificationMessage}</strong>
-              <span className="block sm:inline">Go check it out!.</span>
+              <span className="block sm:inline">{`\nGo check it out!`}</span>
               <span className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={handleCloseNotification}>
                 <svg className="fill-current h-6 w-6 text-red-500 cursor-pointer" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                   <title>Close</title>
@@ -192,7 +192,7 @@ export default function Home() {
               </span>
             </div>
           }
-        </div>
+        {/* </div> */}
 
         {/* hero */}
         <section className="flex flex-col justify-center items-center py-40 p-6 rounded-lg">
