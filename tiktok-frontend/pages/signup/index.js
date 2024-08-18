@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { firestore } from "@/firebase";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import MultiSelect from "../../components/multiselect";
 
 const SignUpPage = () => {
   const router = useRouter();
@@ -16,6 +17,16 @@ const SignUpPage = () => {
   const [lname, setLname] = useState("");
   const [validSignUp, setValidSignUp] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [selectedTags, setSelectedTags] = useState([]);
+
+  const tags = [
+    "Travel",
+    "Programming",
+    "Cars",
+    "Market",
+    "Photography",
+    "Miscellaneous",
+  ];
 
   const handleSignUp = async () => {
     const userRef = doc(firestore, "users", email);
@@ -29,6 +40,7 @@ const SignUpPage = () => {
         username,
         fname,
         lname,
+        tags: selectedTags,
       });
 
       setErrorMessage("User created! Please login");
@@ -46,12 +58,12 @@ const SignUpPage = () => {
   ) => {
     setValidSignUp(
       password === confirmPassword &&
-      password !== "" &&
-      confirmPassword !== "" &&
-      email !== "" &&
-      username !== "" &&
-      fname !== "" &&
-      lname !== ""
+        password !== "" &&
+        confirmPassword !== "" &&
+        email !== "" &&
+        username !== "" &&
+        fname !== "" &&
+        lname !== ""
     );
   };
 
@@ -60,14 +72,23 @@ const SignUpPage = () => {
       <Header />
       <div className="flex mb-20 justify-center items-center h-screen">
         <div className="bg-white p-6 flex flex-col gap-5 rounded-lg shadow-lg max-w-md w-full">
-          <h4 className="text-3xl text-customBrighterRed font-semibold mb-4">Sign Up Form</h4>
+          <h4 className="text-3xl text-customBrighterRed font-semibold mb-4">
+            Sign Up Form
+          </h4>
           <input
             type="text"
             placeholder="Username"
             value={username}
             onChange={(e) => {
               setUsername(e.target.value);
-              validateSignUp(password, rePassword, email, e.target.value, fname, lname);
+              validateSignUp(
+                password,
+                rePassword,
+                email,
+                e.target.value,
+                fname,
+                lname
+              );
             }}
             className="p-2 mb-4 border rounded-lg w-full"
           />
@@ -77,7 +98,14 @@ const SignUpPage = () => {
             value={fname}
             onChange={(e) => {
               setFname(e.target.value);
-              validateSignUp(password, rePassword, email, username, e.target.value, lname);
+              validateSignUp(
+                password,
+                rePassword,
+                email,
+                username,
+                e.target.value,
+                lname
+              );
             }}
             className="p-2 mb-4 border rounded-lg w-full"
           />
@@ -87,7 +115,14 @@ const SignUpPage = () => {
             value={lname}
             onChange={(e) => {
               setLname(e.target.value);
-              validateSignUp(password, rePassword, email, username, fname, e.target.value);
+              validateSignUp(
+                password,
+                rePassword,
+                email,
+                username,
+                fname,
+                e.target.value
+              );
             }}
             className="p-2 mb-4 border rounded-lg w-full"
           />
@@ -97,7 +132,14 @@ const SignUpPage = () => {
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
-              validateSignUp(password, rePassword, e.target.value, username, fname, lname);
+              validateSignUp(
+                password,
+                rePassword,
+                e.target.value,
+                username,
+                fname,
+                lname
+              );
             }}
             className="p-2 mb-4 border rounded-lg w-full"
           />
@@ -107,7 +149,14 @@ const SignUpPage = () => {
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
-              validateSignUp(e.target.value, rePassword, email, username, fname, lname);
+              validateSignUp(
+                e.target.value,
+                rePassword,
+                email,
+                username,
+                fname,
+                lname
+              );
             }}
             className="p-2 mb-4 border rounded-lg w-full"
           />
@@ -117,15 +166,34 @@ const SignUpPage = () => {
             value={rePassword}
             onChange={(e) => {
               setRePassword(e.target.value);
-              validateSignUp(password, e.target.value, email, username, fname, lname);
+              validateSignUp(
+                password,
+                e.target.value,
+                email,
+                username,
+                fname,
+                lname
+              );
             }}
             className="p-2 mb-4 border rounded-lg w-full"
+          />  
+          <MultiSelect
+            formFieldName={"tag-select"}
+            options={tags}
+            onChange={(e) => {
+              setSelectedTags(e);
+              console.log(selectedTags);
+            }}
+            prompt="Choose your interests"
           />
           <button
             disabled={!validSignUp}
             onClick={handleSignUp}
-            className={`${validSignUp ? "bg-customRed hover:customBrighterRed" : "bg-gray-400"
-              } text-white py-2 rounded-lg w-full`}
+            className={`${
+              validSignUp
+                ? "bg-customRed hover:customBrighterRed"
+                : "bg-gray-400"
+            } text-white py-2 rounded-lg w-full`}
           >
             Sign Up
           </button>
