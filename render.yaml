@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: my-web-service
+    env: node
+    buildCommand: npm run build
+    startCommand: go run main.go
+    envVars:
+      - key: RENDER_EXTERNAL_HOSTNAME
+        sync: false
+    build:
+      docker:
+        file: Dockerfile
+    plan: free
