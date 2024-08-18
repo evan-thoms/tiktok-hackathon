@@ -83,7 +83,7 @@ const getBackendUrl = () => {
 export default function Home() {
 
   // State to control alert visibility
-  const [showAlert, setShowAlert] = useState(true);
+  const [showAlert, setShowAlert] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
 
   // get user from cookie
@@ -112,6 +112,10 @@ export default function Home() {
       setShowAlert(true);
       setContent((prevContents) => [newContent, ...prevContents]);
     };
+
+    socket.onopen = () => {
+      console.log(`Websocket connection established`);
+    }
 
     socket.onclose = () => {
       console.log('WebSocket connection closed');
