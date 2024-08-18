@@ -90,7 +90,9 @@ export default function Home() {
       }
   
       const result = await response.json();
-      console.log('Content submitted:', result);
+      setContent(result)
+      console.log('here i am')
+      console.log('Content submitted:', content);
   
       // Clear the form fields
       setTitle('');
