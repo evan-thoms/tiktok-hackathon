@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import io from 'socket.io-client';
 import Header from "../components/Header";
 import Card from "../components/Card";
 import Slider from "react-slick";
