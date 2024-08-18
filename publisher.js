@@ -1,6 +1,6 @@
 const redis = require('redis');
 const client = redis.createClient({
-  url: 'redis://localhost:6379' // Replace with your Redis server URL if needed
+  url: 'redis://localhost:6379' // Replace Redis server
 });
 
 client.on('error', (err) => {
@@ -20,5 +20,5 @@ const publishNotification = async (message) => {
 
 // test: Publish a notification every 5 seconds
 setInterval(() => {
-  publishNotification('This is a notification!');
+  publishNotification('NEW TEST ALERT');
 }, 5000);
