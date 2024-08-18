@@ -103,6 +103,7 @@ type Content struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	ImageURL    string `json:"imageUrl"`
+	Tag         string `json:"tag"`
 }
 
 func handleSubmit(w http.ResponseWriter, r *http.Request) {
@@ -186,7 +187,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 }
 
 func getContents() ([]Content, error) {
-	rows, err := db.Query("SELECT title, description, image_url FROM content ORDER BY created_at DESC")
+	rows, err := db.Query("SELECT title, description, image_url, tag FROM content ORDER BY created_at DESC")
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +196,7 @@ func getContents() ([]Content, error) {
 	var contents []Content
 	for rows.Next() {
 		var content Content
-		if err := rows.Scan(&content.Title, &content.Description, &content.ImageURL); err != nil {
+		if err := rows.Scan(&content.Title, &content.Description, &content.ImageURL, &content.Tag); err != nil {
 			return nil, err
 		}
 		contents = append(contents, content)
