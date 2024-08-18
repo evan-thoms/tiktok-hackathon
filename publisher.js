@@ -1,24 +1,35 @@
 const redis = require('redis');
-const client = redis.createClient({
-  url: 'redis://localhost:6379' // Replace Redis server
+
+// Replace with your actual values
+const REDIS_URL = 'redis://default:redis@redis-19773.c257.us-east-1-3.ec2.redns.redis-cloud.com:19773';
+
+// Create a Redis client
+const client = redis.createClient({ url: REDIS_URL });
+
+// Connect to Redis
+client.connect().then(() => {
+    console.log('Connected to Redis Cloud');
+}).catch((err) => {
+    console.error('Redis connection error:', err);
 });
 
+// Handle connection errors
 client.on('error', (err) => {
-  console.error('Redis Client Error', err);
+    console.error('Redis connection error:', err);
 });
 
-client.connect();
-
-const publishNotification = async (message) => {
-  try {
-    await client.publish('notifications', message);
-    console.log(`Notification sent: ${message}`);
-  } catch (error) {
-    console.error('Error publishing notification', error);
-  }
+// Function to publish a notification
+const publishNotification = async (message) => {   
+    try {     
+        await client.publish('notifications', message); //send msg to Redis Database    
+        console.log(`Notification sent: ${message}`);
+    } catch (error) {     
+        console.error('Error publishing notification', error);   
+    } 
 };
 
-// test: Publish a notification every 5 seconds
+// Example usage
 setInterval(() => {
-  publishNotification('NEW TEST ALERT');
+  publishNotification('A user just posted!');
 }, 5000);
+

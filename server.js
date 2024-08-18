@@ -1,3 +1,5 @@
+const redis = require('redis');
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -7,21 +9,29 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: "http://127.0.0.1:5500", //front-end server, normally would block it
+        origin: "http://127.0.0.1:5500", //CHANGE: for front-end server, normally would block it
         methods: ["GET", "POST"]
     }
 });
 
-//Reading from Redis
-const redisClient = createClient({
-    url: 'redis://localhost:6379' // Replace with Redis server 
+
+const REDIS_URL = 'redis://default:redis@redis-19773.c257.us-east-1-3.ec2.redns.redis-cloud.com:19773'; //REAL redis hosted url
+
+// Create a Redis client
+const client = redis.createClient({ url: REDIS_URL });
+
+// Connect to Redis
+client.connect().then(() => {
+    console.log('Connected to Redis Cloud');
+    client.subscribe('notifications', (message) => {
+      console.log('Received message from Redis:', message);
+      io.emit('notification', message); //send alert for front-end to recieve
+    });
+}).catch((err) => {
+    console.error('Redis connection error:', err);
 });
 
-redisClient.connect();
-redisClient.subscribe('notifications', (message) => {
-    console.log('Received message from Redis:', message);
-    io.emit('notification', message); //send alert for front-end to recieve
-});
+
 
 
 //testing
