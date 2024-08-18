@@ -21,6 +21,7 @@ const LoginForm = ({ setErrorMessage }) => {
           username: user.data().username,
           fname: user.data().fname,
           lname: user.data().lname,
+          tags: user.data().tags,
         };
 
         Cookies.set("user", JSON.stringify(user_info), { expires: 1 });
