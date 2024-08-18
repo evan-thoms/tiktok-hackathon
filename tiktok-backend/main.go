@@ -3,12 +3,14 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	//"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/websocket"
 	_ "github.com/lib/pq"
@@ -126,9 +128,15 @@ func handleSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// getting tags
+	category, err := classifyContent(content.Title, content.Description)
+	if err != nil {
+		log.Fatalf("Error classifying content: %v", err)
+	}
+
 	// Insert content into the database
 	log.Printf("Inserting content into database: %+v", content)
-	_, err := db.Exec("INSERT INTO content (title, description, image_url) VALUES ($1, $2, $3)", content.Title, content.Description, content.ImageURL)
+	_, err = db.Exec("INSERT INTO content (title, description, image_url, tag) VALUES ($1, $2, $3, $4)", content.Title, content.Description, content.ImageURL, category)
 	if err != nil {
 		log.Printf("Error inserting content into database: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -194,4 +202,56 @@ func getContents() ([]Content, error) {
 	}
 
 	return contents, nil
+}
+
+type OpenAIResponse struct {
+	Choices []struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	} `json:"choices"`
+}
+
+func classifyContent(title, description string) (string, error) {
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		return "", fmt.Errorf("OpenAI API key is missing")
+	}
+
+	client := resty.New()
+	prompt := fmt.Sprintf(`Given the title and description below, classify the content into one of the following categories: travel, programming, cars, market, photography, miscellaneous.
+	
+	Title: %s
+	Description: %s
+
+	Respond with only the category name.`, title, description)
+
+	response, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", "Bearer "+apiKey).
+		SetBody(map[string]interface{}{
+			"model": "gpt-4", // or gpt-3.5-turbo
+			"messages": []map[string]string{
+				{"role": "user", "content": prompt},
+			},
+			"max_tokens": 10, // Small limit since we expect a short response
+		}).
+		Post("https://api.openai.com/v1/chat/completions")
+
+	if err != nil {
+		return "", fmt.Errorf("failed to classify content: %w", err)
+	}
+
+	var result OpenAIResponse
+	if err := json.Unmarshal(response.Body(), &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	if len(result.Choices) == 0 {
+		return "", fmt.Errorf("no choices returned")
+	}
+
+	category := result.Choices[0].Message.Content
+
+	return category, nil
 }
